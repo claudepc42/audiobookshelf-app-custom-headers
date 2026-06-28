@@ -18,8 +18,10 @@ This fork adds a **Custom Headers** link on the server connect screen. Headers y
 | Stack | What it covers |
 |---|---|
 | Capacitor/JS (`nativeHttp.js`, `ServerConnectForm.vue`) | Login, status probe, OAuth, library browsing, all API calls from the web layer |
-| Native Kotlin OkHttp (`ApiHandler.kt`) | Background sync, play requests, progress reporting, Android Auto |
+| Native Kotlin OkHttp (`ApiHandler.kt`) | Background sync, play requests, progress reporting, Android Auto, token refresh |
 | ExoPlayer streaming (`PlayerNotificationService.kt`) | Direct-play audio and HLS transcoded streams |
+| WebSocket (`server.js`) | Live sync and progress push events |
+| Download manager (`InternalDownloadManager.kt`) | Offline downloads |
 
 ### 2. Auto-connect race condition fix (`layouts/default.vue`)
 
@@ -35,21 +37,9 @@ On cold start, if the network came online during `syncLocalSessions()` (which ru
 
 ---
 
-## Known gaps
-
-The following paths do **not** yet forward custom headers. They work fine unless your proxy specifically checks headers on these channels:
-
-- **WebSocket** (`plugins/server.js`) — live sync / progress push events
-- **Download manager** (`InternalDownloadManager.kt`) — offline downloads
-- **`ApiHandler.kt` token refresh sub-path** — the Kotlin-layer `/auth/refresh` retry (the JS-layer refresh is patched)
-
-See `CUSTOM_HEADERS_DESIGN_DOC.md` for details and fix recipes for each gap.
-
----
-
 ## Upstream
 
-This fork tracks [`advplyr/audiobookshelf-app`](https://github.com/advplyr/audiobookshelf-app) `main`. The patches touch only five files and are designed to re-apply cleanly after upstream updates. See `CUSTOM_HEADERS_DESIGN_DOC.md` for the re-apply guide and full testing checklist.
+This fork tracks [`advplyr/audiobookshelf-app`](https://github.com/advplyr/audiobookshelf-app) `main`. The patches are designed to re-apply cleanly after upstream updates. See `CUSTOM_HEADERS_DESIGN_DOC.md` for the re-apply guide and full testing checklist.
 
 ---
 
