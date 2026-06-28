@@ -2,13 +2,17 @@ package com.audiobookshelf.app.plugins
 
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.graphics.Color
 import android.net.Uri
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.LinearLayout
+import android.widget.TextView
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -45,6 +49,16 @@ class AbsCfZeroTrust : Plugin() {
 
       var resolved = false
 
+      // URL indicator bar so the user can see what host they're authenticating against
+      val urlBar = TextView(activity).apply {
+        text = serverHost
+        setTextColor(Color.parseColor("#AAAAAA"))
+        setBackgroundColor(Color.parseColor("#111111"))
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+        gravity = Gravity.CENTER
+        setPadding(16, 12, 16, 12)
+      }
+
       webView.webViewClient = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
           return false
@@ -53,6 +67,7 @@ class AbsCfZeroTrust : Plugin() {
         override fun onPageFinished(view: WebView?, url: String?) {
           if (url == null || resolved) return
           val currentHost = try { Uri.parse(url).host ?: "" } catch (e: Exception) { "" }
+          urlBar.text = currentHost
 
           if (currentHost == serverHost || currentHost.endsWith(".$serverHost")) {
             val serverOrigin = try {
@@ -74,6 +89,10 @@ class AbsCfZeroTrust : Plugin() {
 
       val layout = LinearLayout(activity)
       layout.orientation = LinearLayout.VERTICAL
+      layout.addView(urlBar, LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+      ))
       layout.addView(webView, LinearLayout.LayoutParams(
         LinearLayout.LayoutParams.MATCH_PARENT,
         LinearLayout.LayoutParams.MATCH_PARENT

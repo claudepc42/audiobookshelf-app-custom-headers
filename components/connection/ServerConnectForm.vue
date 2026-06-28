@@ -477,7 +477,12 @@ export default {
         })
         if (resp.status >= 300 && resp.status < 400) {
           const location = resp.headers?.location || resp.headers?.Location || ''
-          if (!location.includes('cloudflareaccess.com')) return undefined
+          try {
+            const locationHost = new URL(location).hostname
+            if (locationHost !== 'cloudflareaccess.com' && !locationHost.endsWith('.cloudflareaccess.com')) return undefined
+          } catch (e) {
+            return undefined
+          }
         } else {
           return undefined
         }
