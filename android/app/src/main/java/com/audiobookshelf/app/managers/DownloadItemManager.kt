@@ -132,7 +132,7 @@ class DownloadItemManager(
             "Start internal download to destination path ${downloadItemPart.finalDestinationPath} from ${downloadItemPart.serverUrl}"
     )
     InternalDownloadManager(fileOutputStream, internalProgressCallback)
-            .download(downloadItemPart.serverUrl)
+            .download(downloadItemPart.serverUrl, DeviceManager.serverConnectionConfig?.customHeaders)
     downloadItemPart.downloadId = 1
     currentDownloadItemParts.add(downloadItemPart)
   }

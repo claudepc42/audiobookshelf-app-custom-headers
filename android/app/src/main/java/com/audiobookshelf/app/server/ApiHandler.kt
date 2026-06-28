@@ -207,12 +207,12 @@ class ApiHandler(var ctx:Context) {
 
       // Create refresh token request
       val refreshEndpoint = "${DeviceManager.serverAddress}/auth/refresh"
-      val refreshRequest = Request.Builder()
+      val refreshBuilder = Request.Builder()
         .url(refreshEndpoint)
         .addHeader("x-refresh-token", refreshToken)
         .addHeader("Content-Type", "application/json")
-        .post(EMPTY_REQUEST)
-        .build()
+      DeviceManager.serverConnectionConfig?.customHeaders?.forEach { (key, value) -> refreshBuilder.addHeader(key, value) }
+      val refreshRequest = refreshBuilder.post(EMPTY_REQUEST).build()
 
       // Make the refresh request
       val client = httpClient ?: defaultClient

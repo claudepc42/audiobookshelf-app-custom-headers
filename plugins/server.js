@@ -33,11 +33,13 @@ class ServerSocket extends EventEmitter {
 
     console.log(`[SOCKET] Connecting to ${serverHost} with path ${serverPath}/socket.io`)
 
+    const customHeaders = this.$store.state.user.serverConnectionConfig?.customHeaders || {}
     const socketOptions = {
       transports: ['websocket'],
       upgrade: false,
       path: `${serverPath}/socket.io`,
-      reconnectionDelayMax: 15000
+      reconnectionDelayMax: 15000,
+      extraHeaders: customHeaders
     }
     this.socket = io(serverHost, socketOptions)
     this.setSocketListeners()

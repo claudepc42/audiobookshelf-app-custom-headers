@@ -28,8 +28,10 @@ class InternalDownloadManager(
    * @throws IOException If an I/O error occurs.
    */
   @Throws(IOException::class)
-  fun download(url: String) {
-    val request: Request = Request.Builder().url(url).addHeader("Accept-Encoding", "identity").build()
+  fun download(url: String, customHeaders: Map<String, String>? = null) {
+    val builder = Request.Builder().url(url).addHeader("Accept-Encoding", "identity")
+    customHeaders?.forEach { (key, value) -> builder.addHeader(key, value) }
+    val request: Request = builder.build()
     client.newCall(request)
             .enqueue(
                     object : Callback {
