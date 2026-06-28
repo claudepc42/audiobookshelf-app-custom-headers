@@ -43,13 +43,19 @@ jobs:
 
       - name: Sign APK
         id: sign
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > /tmp/keystore.jks
+          UNSIGNED=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          SIGNED=android/app/build/outputs/apk/release/app-release-signed.apk
+          BUILD_TOOLS=$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)
+          $ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner sign \
+            --ks /tmp/keystore.jks \
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+            --key-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+            --ks-key-alias ${{ secrets.KEY_ALIAS }} \
+            --out $SIGNED \
+            $UNSIGNED
+          echo "signedFile=$SIGNED" >> $GITHUB_OUTPUT
 
       - name: Publish to GitHub Releases
         uses: ncipollo/release-action@v1
@@ -57,14 +63,14 @@ jobs:
           tag: dev-build
           name: "Dev Build (latest main)"
           body: |
-            Automated build from latest `main` branch.
+            Automated build from latest `master` branch.
 
             **Patches applied:**
-            - Custom headers support (Cloudflare Zero Trust / reverse proxy auth) — adds a "Custom Headers" option on the server connect screen
-            - Auto-connect race condition fix — app now reliably connects to your saved server on cold start
+            - Custom headers on all HTTP stacks (Cloudflare Zero Trust / reverse proxy auth) — covers API calls, streaming, WebSocket, downloads, and token refresh
+            - Auto-connect race condition fix — app reliably connects to your saved server on cold start
 
-            **Installing:** If you have a previous version signed with a different key, uninstall it first.
-          artifacts: ${{ steps.sign.outputs.signedReleaseFile }}
+            **Installing:** If you have the Play Store version or a build signed with a different key, uninstall it first.
+          artifacts: ${{ steps.sign.outputs.signedFile }}
           prerelease: true
           allowUpdates: true
           removeArtifacts: true
