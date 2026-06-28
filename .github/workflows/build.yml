@@ -45,16 +45,19 @@ jobs:
         id: sign
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.KEY_PASSWORD }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          KS_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          printf '%s' "$KEYSTORE_B64" | base64 --decode --ignore-garbage > /tmp/keystore.jks
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > /tmp/keystore.jks
           UNSIGNED=android/app/build/outputs/apk/release/app-release-unsigned.apk
           SIGNED=android/app/build/outputs/apk/release/app-release-signed.apk
           BUILD_TOOLS=$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)
           $ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner sign \
             --ks /tmp/keystore.jks \
-            --ks-pass pass:${{ secrets.KEY_PASSWORD }} \
-            --key-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
-            --ks-key-alias ${{ secrets.KEY_ALIAS }} \
+            --ks-pass env:KS_PASS \
+            --key-pass env:KEY_PASS \
+            --ks-key-alias "$KS_ALIAS" \
             --out $SIGNED \
             $UNSIGNED
           echo "signedFile=$SIGNED" >> $GITHUB_OUTPUT

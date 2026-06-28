@@ -1,29 +1,37 @@
-# Audiobookshelf Mobile App — Custom Headers Fork
+# Audiobookshelf Mobile App — Cloudflare Zero Trust Fork
 
 > **This is an unofficial patched build of the [Audiobookshelf Android app](https://github.com/advplyr/audiobookshelf-app).**
-> It adds custom HTTP header support for Cloudflare Zero Trust and other reverse-proxy authentication systems, plus a cold-start auto-connect fix.
+> It adds Cloudflare Zero Trust support — both WebView SSO login and manual service token headers — plus a cold-start auto-connect fix.
 >
-> **[⬇ Download the latest signed APK from Releases](https://github.com/claudepc42/audiobookshelf-app-custom-headers/releases/tag/dev-build)**
+> **[⬇ Download the latest signed APK from Releases](https://github.com/claudepc42/audiobookshelf-app-cf-ZeroTrust/releases/tag/dev-build)**
 
 ---
 
 ## What's patched
 
-### 1. Custom HTTP headers (Cloudflare Zero Trust / reverse proxy auth)
+### 1. Cloudflare Zero Trust WebView SSO
 
-The upstream app has no way to send custom headers (e.g. `CF-Access-Client-Id` / `CF-Access-Client-Secret`) on its HTTP requests, so it cannot authenticate against Cloudflare Zero Trust or other header-gated reverse proxies.
+When you enter a server address and tap **Submit**, the app automatically detects if your server is behind Cloudflare Zero Trust (via the CF 302 redirect to `cloudflareaccess.com`). If detected, an in-app WebView opens, you log in with your Cloudflare identity (Google, Microsoft, GitHub, etc.), and the app extracts and stores the session cookies automatically. No manual token entry required.
 
-This fork adds a **Custom Headers** link on the server connect screen. Headers you enter are saved per server config and injected into every request the app makes across all three HTTP stacks:
+You can also tap **Login with Cloudflare** below the Submit button to trigger this manually.
+
+**Re-authentication:** When your Cloudflare session expires, API calls fail and you're returned to the connect screen. Tap your server to reconnect — the WebView opens again for a fresh login. The "Connection lost" message you see is the app telling you the session expired; just reconnect.
+
+### 2. Custom HTTP headers (service tokens / advanced)
+
+For service tokens or other header-gated reverse proxies, tap **Custom Headers** below the Submit button to enter headers manually (e.g. `CF-Access-Client-Id` / `CF-Access-Client-Secret`). Headers entered this way skip the WebView SSO detection entirely.
+
+Headers are saved per server config and injected into every request the app makes across all HTTP stacks:
 
 | Stack | What it covers |
 |---|---|
-| Capacitor/JS (`nativeHttp.js`, `ServerConnectForm.vue`) | Login, status probe, OAuth, library browsing, all API calls from the web layer |
+| Capacitor/JS (`nativeHttp.js`, `ServerConnectForm.vue`) | Login, status probe, OAuth, library browsing, all API calls |
 | Native Kotlin OkHttp (`ApiHandler.kt`) | Background sync, play requests, progress reporting, Android Auto, token refresh |
 | ExoPlayer streaming (`PlayerNotificationService.kt`) | Direct-play audio and HLS transcoded streams |
 | WebSocket (`server.js`) | Live sync and progress push events |
 | Download manager (`InternalDownloadManager.kt`) | Offline downloads |
 
-### 2. Auto-connect race condition fix (`layouts/default.vue`)
+### 3. Auto-connect race condition fix (`layouts/default.vue`)
 
 On cold start, if the network came online during `syncLocalSessions()` (which runs before `hasMounted` is set), the `networkConnected` watcher dropped the event and the app was left on the connect screen, requiring manual server selection. The fix re-runs `attemptConnection()` once `hasMounted` is safely set. It is idempotent — `attemptConnection()` guards against concurrent execution internally.
 
@@ -31,7 +39,7 @@ On cold start, if the network came online during `syncLocalSessions()` (which ru
 
 ## Installing
 
-1. Download `app-release-signed.apk` from the [Releases page](https://github.com/claudepc42/audiobookshelf-app-custom-headers/releases/tag/dev-build).
+1. Download `app-release-signed.apk` from the [Releases page](https://github.com/claudepc42/audiobookshelf-app-cf-ZeroTrust/releases/tag/dev-build).
 2. If you have the Play Store version or a previous build signed with a different key installed, **uninstall it first** before installing this APK.
 3. Allow installation from unknown sources if prompted.
 
@@ -191,7 +199,7 @@ npx cap open android
 
 Start coding!
 
-After making changes to the JS layer you need to rebuild the nuxt pages and sync them to the native shells:
+After making changes to the JS layer you need to rebuild the nuxt pages and sync them to the native layers:
 
 ```shell
 npm run sync
@@ -267,7 +275,7 @@ npx cap open ios
 
 Start coding!
 
-After making changes to the JS layer you need to rebuild the nuxt pages and sync them to the native shells:
+After making changes to the JS layer you need to rebuild the nuxt pages and sync them to the native layers:
 
 ```shell
 npm run sync
