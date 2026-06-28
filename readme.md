@@ -1,4 +1,61 @@
-# Audiobookshelf Mobile App
+# Audiobookshelf Mobile App — Custom Headers Fork
+
+> **This is an unofficial patched build of the [Audiobookshelf Android app](https://github.com/advplyr/audiobookshelf-app).**
+> It adds custom HTTP header support for Cloudflare Zero Trust and other reverse-proxy authentication systems, plus a cold-start auto-connect fix.
+>
+> **[⬇ Download the latest signed APK from Releases](https://github.com/claudepc42/audiobookshelf-app-custom-headers/releases/tag/dev-build)**
+
+---
+
+## What's patched
+
+### 1. Custom HTTP headers (Cloudflare Zero Trust / reverse proxy auth)
+
+The upstream app has no way to send custom headers (e.g. `CF-Access-Client-Id` / `CF-Access-Client-Secret`) on its HTTP requests, so it cannot authenticate against Cloudflare Zero Trust or other header-gated reverse proxies.
+
+This fork adds a **Custom Headers** link on the server connect screen. Headers you enter are saved per server config and injected into every request the app makes across all three HTTP stacks:
+
+| Stack | What it covers |
+|---|---|
+| Capacitor/JS (`nativeHttp.js`, `ServerConnectForm.vue`) | Login, status probe, OAuth, library browsing, all API calls from the web layer |
+| Native Kotlin OkHttp (`ApiHandler.kt`) | Background sync, play requests, progress reporting, Android Auto |
+| ExoPlayer streaming (`PlayerNotificationService.kt`) | Direct-play audio and HLS transcoded streams |
+
+### 2. Auto-connect race condition fix (`layouts/default.vue`)
+
+On cold start, if the network came online during `syncLocalSessions()` (which runs before `hasMounted` is set), the `networkConnected` watcher dropped the event and the app was left on the connect screen, requiring manual server selection. The fix re-runs `attemptConnection()` once `hasMounted` is safely set. It is idempotent — `attemptConnection()` guards against concurrent execution internally.
+
+---
+
+## Installing
+
+1. Download `app-release-signed.apk` from the [Releases page](https://github.com/claudepc42/audiobookshelf-app-custom-headers/releases/tag/dev-build).
+2. If you have the Play Store version or a previous build signed with a different key installed, **uninstall it first** before installing this APK.
+3. Allow installation from unknown sources if prompted.
+
+---
+
+## Known gaps
+
+The following paths do **not** yet forward custom headers. They work fine unless your proxy specifically checks headers on these channels:
+
+- **WebSocket** (`plugins/server.js`) — live sync / progress push events
+- **Download manager** (`InternalDownloadManager.kt`) — offline downloads
+- **`ApiHandler.kt` token refresh sub-path** — the Kotlin-layer `/auth/refresh` retry (the JS-layer refresh is patched)
+
+See `CUSTOM_HEADERS_DESIGN_DOC.md` for details and fix recipes for each gap.
+
+---
+
+## Upstream
+
+This fork tracks [`advplyr/audiobookshelf-app`](https://github.com/advplyr/audiobookshelf-app) `main`. The patches touch only five files and are designed to re-apply cleanly after upstream updates. See `CUSTOM_HEADERS_DESIGN_DOC.md` for the re-apply guide and full testing checklist.
+
+---
+
+## Original readme
+
+---
 
 Audiobookshelf is a self-hosted audiobook and podcast server.
 
